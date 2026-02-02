@@ -1,17 +1,21 @@
 from fastapi import FastAPI
 import chromadb
 import ollama
+from ollama import Client
 
 app = FastAPI()
 chroma = chromadb.PersistentClient(path="./db")
 collections = chroma.get_or_create_collection("docs")
+ollama_client = Client(host="http://127.0.0.1:11434")
+#ollama_client = ollama.Client(host="http://host.docker.internal:11434")
+
 
 @app.post("/query")
 def query(q: str):
     results = collections.query(query_texts=[q], n_results=1)
     context = results["documents"][0][0] if results["documents"] else ""
 
-    answer = ollama.generate(
+    answer = ollama_client.generate(
         model = "tinyllama",
         prompt = f"Context: \n{context}\n\nQuestion: {q}\n\nAnswer clearly and concisely."
     )
